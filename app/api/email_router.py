@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, File, UploadFile, Form
 from app.infra.services.gmail_service import GmailService 
-from typing import Optional, List
+from typing import Optional, List, Union
 from app.api.deps import get_token_dependency
 from app.api.user_router import get_current_user_id
 from app.core.enums import EmailFolder, EmailStatus
@@ -51,7 +51,7 @@ async def send_user_email(
     to: str = Form(..., description="Email người nhận"),
     subject: str = Form(..., description="Tiêu đề"),
     body: str = Form(..., description="Nội dung"),
-    files: Optional[List[UploadFile]] = File(None, description="Chọn file đính kèm (Tùy chọn)"),
+    files: Optional[Union[UploadFile, List[UploadFile]]] = File(None, description="Chọn file đính kèm (Tùy chọn)"),
     token_data: dict = Depends(get_token_dependency)
 ):
     service = GmailService(token_data)
@@ -59,7 +59,9 @@ async def send_user_email(
     # Xử lý file upload
     attachment_list = []
     if files:
-        for file in files:
+        upload_files = files if isinstance(files, list) else [files]
+
+        for file in upload_files:
             content = await file.read() # Đọc file thành bytes
             attachment_list.append({
                 "filename": file.filename,

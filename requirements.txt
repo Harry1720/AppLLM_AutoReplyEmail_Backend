@@ -1,0 +1,30 @@
+fastapi==0.109.0 
+uvicorn[standard]==0.27.0 
+python-dotenv==1.0.0 
+pydantic==2.5.0 
+pydantic-settings==2.1.0 
+
+# Google APIs 
+google-auth==2.27.0 
+google-auth-oauthlib==1.2.0 
+google-auth-httplib2==0.2.0 
+google-api-python-client==2.115.0 
+
+# Database 
+supabase>=2.4.0
+psycopg2-binary==2.9.9 
+
+# AI & ML 
+langchain
+langchain-core
+langchain-community
+langgraph
+langchain-huggingface
+langchain-groq
+sentence-transformers
+
+# Utilities 
+httpx==0.26.0 
+pyjwt==2.8.0 
+
+python-multipart

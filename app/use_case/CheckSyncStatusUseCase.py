@@ -1,6 +1,5 @@
 import logging
 from app.infra.supabase_client import get_supabase
-from app.infra.ai.vectorizer import EmailVectorizer
 from app.infra.services.gmail_service import GmailService
 
 class CheckAndAutoSyncUseCase:
@@ -8,8 +7,6 @@ class CheckAndAutoSyncUseCase:
         self.user_id = user_id
         self.token_data = token_data
         self.db = get_supabase()
-
-        self.vectorizer = EmailVectorizer(user_id, token_data)
 
     def execute(self):
         try:
@@ -31,33 +28,24 @@ class CheckAndAutoSyncUseCase:
                 }
 
             # 3. So sánh với DB để tìm email chưa sync
-            existing_email_ids = self.vectorizer._get_existing_email_ids()
+            existing_rows = self.db.table("documents").select("metadata").eq("metadata->>user_id", self.user_id).execute()
+            existing_email_ids = set()
+            if existing_rows.data:
+                for doc in existing_rows.data:
+                    metadata = doc.get("metadata", {})
+                    email_id = metadata.get("email_id")
+                    if email_id:
+                        existing_email_ids.add(email_id)
+
             new_email_ids = [e['id'] for e in sent_emails if e['id'] not in existing_email_ids]
             pending_count = len(new_email_ids)
             
-            # 4. TỰ ĐỘNG SYNC NẾU CÓ EMAIL MỚI
-            if pending_count > 0:
-                logging.info(f"🔄 [UseCase] Phát hiện {pending_count} email mới, đang tự động sync...")
-                sync_result = self.vectorizer.sync_user_emails()
-                
-                # Đếm lại sau khi sync
-                response_after = self.db.table("documents").select("id", count="exact").eq("metadata->>user_id", self.user_id).execute()
-                new_doc_count = response_after.count if hasattr(response_after, 'count') else 0
-                
-                return {
-                    "synced": True,
-                    "document_count": new_doc_count,
-                    "pending_emails": 0,
-                    "just_synced": sync_result.get("synced_count", 0),
-                    "message": f"✓ Đã tự động đồng bộ {sync_result.get('synced_count', 0)} email mới"
-                }
-            else:
-                return {
-                    "synced": True,
-                    "document_count": doc_count,
-                    "pending_emails": 0,
-                    "message": "✓ Dữ liệu đã được đồng bộ hoàn toàn"
-                }
+            return {
+                "synced": pending_count == 0,
+                "document_count": doc_count,
+                "pending_emails": pending_count,
+                "message": "✓ Dữ liệu đã được đồng bộ hoàn toàn" if pending_count == 0 else f"Có {pending_count} email mới chưa đồng bộ"
+            }
                 
         except Exception as e:
             logging.error(f" [UseCase] Lỗi check status: {e}")

@@ -6,6 +6,7 @@ from app.api.email_router import email_router
 from app.api.user_router import user_router
 from app.api.ai_router import ai_router
 import logging
+import asyncio
 
 app = FastAPI(
     title="My AutoReplyEmail App",
@@ -13,13 +14,24 @@ app = FastAPI(
     version="1.0.0"
 )
 
+
 @app.on_event("startup")
 async def startup_event():
-    """Preload AI models when server starts to avoid delays on first request"""
-    logging.info("Server starting - Preloading AI models...")
-    from app.infra.ai.reasoning import get_embeddings_model
-    get_embeddings_model() 
-    logging.info("AI models loaded and ready!")
+    """Schedule background preload of AI models to prioritize fast startup."""
+    app.state.model_loaded = False
+    logging.info("Server starting - scheduling background preload of AI models...")
+
+    async def _preload():
+        from app.infra.ai.reasoning import get_embeddings_model
+        logging.info("Background: Loading Embeddings Model...")
+        try:
+            await asyncio.to_thread(get_embeddings_model)
+            app.state.model_loaded = True
+            logging.info("Background: AI models loaded and ready!")
+        except Exception as e:
+            logging.error(f"Background preload failed: {e}")
+
+    asyncio.create_task(_preload())
 
 # Add CORS
 app.add_middleware(
@@ -40,3 +52,13 @@ app.include_router(ai_router, tags=["AI Agents"])
 @app.get("/")
 def read_root():
     return {"message": "Hello FastAPI"}
+
+
+@app.get('/health')
+def health():
+    return {"status": "ok"}
+
+
+@app.get('/ready')
+def ready():
+    return {"ready": bool(getattr(app.state, 'model_loaded', False))}

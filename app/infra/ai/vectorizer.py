@@ -1,7 +1,7 @@
 import os
 import logging
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
 from langchain_community.vectorstores import SupabaseVectorStore
 from supabase.client import create_client
 from app.infra.services.gmail_service import GmailService
@@ -13,11 +13,10 @@ _cached_vectorizer_embeddings = None
 def get_vectorizer_embeddings():
     global _cached_vectorizer_embeddings
     if _cached_vectorizer_embeddings is None:
-        logging.info("[Vectorizer] Đang tải Embeddings Model...")
-        _cached_vectorizer_embeddings = HuggingFaceEmbeddings(
-            model_name="sentence-transformers/all-MiniLM-L6-v2",
-            model_kwargs={'device': 'cpu'},
-            encode_kwargs={'normalize_embeddings': True}
+        logging.info("[Vectorizer] Đang tải Embeddings Model qua API...")
+        _cached_vectorizer_embeddings = HuggingFaceInferenceAPIEmbeddings(
+            api_key=os.getenv("HUGGINGFACE_API_KEY"),
+            model_name="sentence-transformers/all-MiniLM-L6-v2"
         )
         logging.info("[Vectorizer]  Embeddings Model đã được cache!")
     return _cached_vectorizer_embeddings

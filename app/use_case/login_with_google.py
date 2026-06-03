@@ -35,7 +35,7 @@ class LoginWithGoogleUseCase:
                     "https://www.googleapis.com/auth/gmail.modify"
                 ],
                 # redirect_uri="http://localhost:3000/auth/callback" 
-                redirect_uri="https://harrydev-autoreplyemail.vercel.app/" 
+                redirect_uri="https://harrydev-autoreplyemail.vercel.app/auth/callback" 
             )
 
             # 2. Đổi Code lấy Token

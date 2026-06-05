@@ -159,3 +159,7 @@ Trong quá trình cài đặt và chạy dự án, bạn có thể gặp một s
 ## 9. Mã nguồn Frontend của dự án
 
 Truy cập: <https://github.com/Harry1720/AppLLM_AutoReplyEmail_Frontend>
+
+## 10. Video demo
+
+Truy cập: <https://youtu.be/kkgnnmsziUI>
